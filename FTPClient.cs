@@ -7,11 +7,20 @@ namespace Csci351ftp
 {
     /// <summary>
     /// Interpret and execute client commands for an FTP connection.
+    /// This basically holds all the state for the CLI.
     /// </summary>
     public class FTPClient
     {
 
-#region Constants
+        /*
+         * FYI:
+         * An FTP reply consists of a three digit number (transmitted as
+         *  three alphanumeric characters) followed by some text.  The number
+         *  is intended for use by automata to determine what state to enter
+         *  next; the text is intended for the human user.
+         */
+
+        #region Constants
         // Information to parse commands
         public static readonly string[] COMMANDS = { "ascii",
          "binary",
@@ -26,6 +35,24 @@ namespace Csci351ftp
          "pwd",
          "quit",
          "user" };
+
+        // Help message
+
+        public static readonly String HELP_MESSAGE = 
+	        "ascii      --> Set ASCII transfer type\n"+
+	        "binary     --> Set binary transfer type\n"+
+	        "cd <path>  --> Change the remote working directory\n"+
+	        "cdup       --> Change the remote working directory to the\n"+
+                "               parent directory (i.e., cd ..)\n"+
+	        "debug      --> Toggle debug mode\n"+
+	        "dir        --> List the contents of the remote directory\n"+
+	        "get path   --> Get a remote file\n"+
+	        "help       --> Displays this text\n"+
+	        "passive    --> Toggle passive/active mode\n"+
+            "put path   --> Transfer the specified file to the server\n"+
+	        "pwd        --> Print the working directory on the server\n"+
+            "quit       --> Close the connection to the server and terminate\n"+
+	        "user login --> Specify the user name (will prompt for password)";
 
         public const int ASCII = 0;
         public const int BINARY = 1;
@@ -44,25 +71,25 @@ namespace Csci351ftp
 
 #region Members
         FTPConnection con;
-        UserPrompt prompt;
-
+        
         /// <summary>
         /// Indicate whether the client is maintaining the connection or if it has closed.
         /// </summary>
-        public bool Open { get; private set; }
+        public bool IsOpen { get; private set; }
+
+
+        public bool IsDebug { get; private set; }
 #endregion
 
         public FTPClient(String remote)
         {
             // initialize FTPConnection on remote
             con = new FTPConnection(remote);
-
-            prompt = new UserPrompt();
-
-            Open = true;
+            IsOpen = true;
+            IsDebug = false;
         }
 
-        public String Exec(String cmd, String[] args) {
+        public void Exec(String cmd, String[] args) {
             int cid = -1;
             for (int i = 0; i < COMMANDS.Length && cid == -1; ++i)
             {
@@ -75,38 +102,45 @@ namespace Csci351ftp
             switch (cid)
             {
                 case QUIT:
-                    Open = false;
-                    goto case 99;   //TEMPORARY setup to test cmd checking
+                    IsOpen = false;
+                    //close connection, potentially other cleanup
+                    break;
                 case ASCII:
+                    break;
                 case BINARY:
+                    break;
                 case CD:
+                    break;
                 case CDUP:
+                    break;
                 case DEBUG:
+                    IsDebug = (IsDebug ? false : true);
+                    break;
                 case DIR:
+                    break;
                 case GET:
+                    break;
                 case HELP:
+                    break;
                 case PASSIVE:
+                    break;
                 case PUT:
+                    break;
                 case PWD:
+                    break;
                 case USER:
-                case 99:
-                    return "Command is good.";
+                    break;
                 default:
-                    return "Unknown command.";
+                    Console.WriteLine("Unknown command.");
+                    break;
             }
         }
 
-        public String? GetPrompt()
+        private void DebugLine(String str, bool debug)
         {
-            if (prompt == null)
+            if (debug)
             {
-                return null;
-            }
-            else
-            {
-                String msg = prompt.Message;
-                prompt = prompt.Next;
-                return msg;
+                Console.WriteLine(str);
             }
         }
     }
