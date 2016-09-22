@@ -13,35 +13,6 @@ namespace Csci351ftp
         // The prompt
         public const string PROMPT = "FTP> ";
 
-        // Information to parse commands
-        public static readonly string[] COMMANDS = { "ascii",
-         "binary",
-         "cd",
-         "cdup",
-         "debug",
-         "dir",
-         "get",
-         "help",
-         "passive",
-         "put",
-         "pwd",
-         "quit",
-         "user" };
-
-        public const int ASCII = 0;
-        public const int BINARY = 1;
-        public const int CD = 2;
-        public const int CDUP = 3;
-        public const int DEBUG = 4;
-        public const int DIR = 5;
-        public const int GET = 6;
-        public const int HELP = 7;
-        public const int PASSIVE = 8;
-        public const int PUT = 9;
-        public const int PWD = 10;
-        public const int QUIT = 11;
-        public const int USER = 12;
-
         // Help message
 
         public static readonly String[] HELP_MESSAGE = {
@@ -62,7 +33,37 @@ namespace Csci351ftp
 
         static void Main(string[] args)
         {
-            Console.Write(HELP_MESSAGE);
+            if (args.Length != 1)
+            {
+                Console.Error.WriteLine("Usage: [mono] Ftp server");
+                Environment.Exit(1);
+            }
+
+            FTPClient client = new FTPClient(args[0]);
+            String input = String.Empty;
+            
+            do
+            {
+                input = Console.ReadLine();
+                Console.WriteLine(input);
+                String[] tokens = input.Split(' ');
+                String cmd = tokens[0];
+                String[] cmdargs = GetTail<String>(tokens).ToArray<String>();
+                Console.WriteLine(tokens[0]);
+                Console.WriteLine(String.Join(",", cmdargs));
+                Console.WriteLine(client.Exec(cmd, cmdargs));
+
+            } while (client.Open);
+        }
+
+        static IList<T> GetTail<T>(IList<T> arr)
+        {
+            if (arr.Count < 2)
+                return new List<T>();
+            else {
+                arr.RemoveAt(0);
+                return arr;
+            }
         }
     }
 }
