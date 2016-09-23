@@ -5,6 +5,18 @@ using System.Linq;
 
 namespace Csci351ftp
 {
+    public enum ClientMode
+    {
+        Active,
+        Passive
+    }
+
+    public enum DataMode
+    {
+        ASCII,
+        Binary
+    }
+
     /// <summary>
     /// Interpret and execute client commands for an FTP connection.
     /// This basically holds all the state for the CLI.
@@ -22,19 +34,21 @@ namespace Csci351ftp
 
         #region Constants
         // Information to parse commands
-        public static readonly string[] COMMANDS = { "ascii",
-         "binary",
-         "cd",
-         "cdup",
-         "debug",
-         "dir",
-         "get",
-         "help",
-         "passive",
-         "put",
-         "pwd",
-         "quit",
-         "user" };
+        public static readonly string[] COMMANDS = {
+            "ascii",
+            "binary",
+            "cd",
+            "cdup",
+            "debug",
+            "dir",
+            "get",
+            "help",
+            "passive",
+            "put",
+            "pwd",
+            "quit",
+            "user"
+        };
 
         // Help message
 
@@ -77,18 +91,37 @@ namespace Csci351ftp
         /// </summary>
         public bool IsOpen { get; private set; }
 
-
+        /// <summary>
+        /// Indicate whether the client is in debug mode, which will determine whether to print true FTP commands.
+        /// </summary>
         public bool IsDebug { get; private set; }
+
+        /// <summary>
+        /// Active or Passive mode, which determines how files are transferred to the remote server.
+        /// </summary>
+        public ClientMode CliMode { get; private set; }
+
+        /// <summary>
+        /// ASCII or Binary, the way to interpret incoming bits.
+        /// </summary>
+        public DataMode DatMode { get; private set; }
 #endregion
 
         public FTPClient(String remote)
         {
-            // initialize FTPConnection on remote
             con = new FTPConnection(remote);
             IsOpen = true;
             IsDebug = false;
+            CliMode = ClientMode.Passive;
+            DatMode = DataMode.Binary;
         }
 
+        /// <summary>
+        /// Handle a CLIENT command and translate it into one or more FTP commands and manage the connection(s)
+        /// associated with the execution thereof.
+        /// </summary>
+        /// <param name="cmd">A case-insensitive command string.</param>
+        /// <param name="args">The arguments to be used with the command. Unused arugments will be dropped.</param>
         public void Exec(String cmd, String[] args) {
             int cid = -1;
             for (int i = 0; i < COMMANDS.Length && cid == -1; ++i)
@@ -103,11 +136,18 @@ namespace Csci351ftp
             {
                 case QUIT:
                     IsOpen = false;
-                    //close connection, potentially other cleanup
+                    //Send QUIT
+                    con.Close();
                     break;
                 case ASCII:
+                    //Send TYPE A
+                    DatMode = DataMode.ASCII;
+                    Console.WriteLine("Switching to ASCII mode.");
                     break;
                 case BINARY:
+                    //Send TYPE I
+                    DatMode = DataMode.Binary;
+                    Console.WriteLine("Switching to Binary mode.");
                     break;
                 case CD:
                     break;
@@ -115,6 +155,7 @@ namespace Csci351ftp
                     break;
                 case DEBUG:
                     IsDebug = (IsDebug ? false : true);
+                    Console.WriteLine("Debugging turned {0}.", (IsDebug ? "on" : "off"));
                     break;
                 case DIR:
                     break;
@@ -123,6 +164,9 @@ namespace Csci351ftp
                 case HELP:
                     break;
                 case PASSIVE:
+                    //Send PASV
+                    CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
+                    Console.WriteLine("Switching to {0} mode.", CliMode.ToString());
                     break;
                 case PUT:
                     break;
