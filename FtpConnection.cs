@@ -19,7 +19,7 @@ namespace Csci351ftp
 
         public String HostName { get; private set; }
 
-        public FTPConnection(String hostName, int bufferSize = 0x40000)
+        public FTPConnection(String hostName, int port = 21, int bufferSize = 0x40000)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace Csci351ftp
 
             try
             {
-                tcp.Connect(hostName, 21);
+                tcp.Connect(hostName, port);
             }
             catch (SocketException se)
             {
@@ -74,6 +74,44 @@ namespace Csci351ftp
             
         }
 
+        public FTPConnection(IPAddress address, int port = 21, int bufferSize = 0x40000)
+        {
+            IP = address;
+            try
+            {
+                HostName = Dns.GetHostEntry(IP).HostName;
+            }
+            catch (SocketException se)
+            {
+                throw new ArgumentException("Host at " + IP.ToString() + " could not be reached.", se);
+            }
+
+            // initialize TcpClient  (always on port 21, or 2121 for testing our server)
+            tcp = new TcpClient();
+            buf = new byte[bufferSize];
+
+            try
+            {
+                tcp.Connect(IP, port);
+            }
+            catch (SocketException se)
+            {
+                try
+                {
+                    tcp.Connect(IP, 2121);
+                }
+                catch (Exception einner)
+                {
+                    throw einner;
+                }
+            }
+            catch (Exception eouter)
+            {
+                Console.Error.WriteLine(eouter.Message);
+                tcp.Close();
+            }
+        }
+
         /// <summary>
         /// Destructor to ensure connection is released.
         /// </summary>
@@ -101,7 +139,7 @@ namespace Csci351ftp
             return new ServerMessage(buf.Take<byte>(bytesRead).ToArray<byte>());
         }
 
-        public ServerMessage[] ReadFile()
+        public ServerMessage ReadFile()
         {
             //stub
             return null;

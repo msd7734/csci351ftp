@@ -85,15 +85,20 @@ namespace Csci351ftp
         public const int USER = 12;
 
         //Server responses
-        public const int NEW_USER =         220;
-        public const int LOGIN_SUCCESS =    230;
-        public const int PASSWORD =         331;
+        public const int NEW_USER =             220;
+        public const int PASSIVE_MODE =         227;
+        public const int LOGIN_SUCCESS =        230;
+        public const int PASSWORD =             331;
+
+        public const int UNAVAILABLE =          421;
+        public const int PERMISSION_DENIED =    550;
         
 #endregion
 
 #region Members
-        FTPConnection con;
-        
+        FTPConnection cmdCon;
+        FTPConnection dataCon;
+
         /// <summary>
         /// Indicate whether the client is maintaining the connection or if it has closed.
         /// </summary>
@@ -117,13 +122,13 @@ namespace Csci351ftp
 
         public FTPClient(String remote)
         {
-            con = new FTPConnection(remote);
+            cmdCon = new FTPConnection(remote);
             IsOpen = true;
             IsDebug = false;
             CliMode = ClientMode.Passive;
             DatMode = DataMode.Binary;
 
-            ServerMessage initialMsg = con.ReadMessage();
+            ServerMessage initialMsg = cmdCon.ReadMessage();
             //Console.WriteLine(initialMsg); <-- do this in HandleReply
             HandleReply(initialMsg);
         }
@@ -203,18 +208,18 @@ namespace Csci351ftp
             }
         }
 
-        private void SendCmd(String cmd, params string[] args)
+        private void SendCmd(String cmd, ref FTPConnection con, params string[] args)
         {
             String argStr = " " + String.Join(" ", args);
             String sendStr = String.Format("{0}{1}\r\n", cmd, argStr);
             // TODO: Change to use debug setting. Keeping as true for now, for testing
             DebugLine(String.Format("---> {0}", sendStr), true);
 
-            con.SendMessage(sendStr);            
+            cmdCon.SendMessage(sendStr);            
         }
 
         /// <summary>
-        /// Act given a server reply with a 3 digit code attached.
+        /// Act based on a server reply with a 3 digit code attached.
         /// </summary>
         /// <param name="reply">The ServerMessage to process.</param>
         private void HandleReply(ServerMessage reply)
@@ -229,6 +234,13 @@ namespace Csci351ftp
                 case PASSWORD:
                     HandleReply( Password() );
                     break;
+                case PASSIVE_MODE:
+
+                    break;
+                case UNAVAILABLE:
+                    IsOpen = false;
+                    cmdCon.Close();
+                    break;
                 default:
                     break;
             }
@@ -238,18 +250,18 @@ namespace Csci351ftp
 
         private ServerMessage Quit()
         {
-            SendCmd("QUIT");
-            ServerMessage reply = con.ReadMessage();
+            SendCmd("QUIT", ref cmdCon);
+            ServerMessage reply = cmdCon.ReadMessage();
             IsOpen = false;
             //Send QUIT
-            con.Close();
+            cmdCon.Close();
             return reply;
         }
 
         private ServerMessage Ascii()
         {
             //Send TYPE A
-            ServerMessage reply = con.ReadMessage();
+            ServerMessage reply = cmdCon.ReadMessage();
             DatMode = DataMode.ASCII;
             Console.WriteLine("Switching to ASCII mode.");
             return reply;
@@ -258,7 +270,7 @@ namespace Csci351ftp
         private ServerMessage Binary()
         {
             //Send TYPE I
-            ServerMessage reply = con.ReadMessage();
+            ServerMessage reply = cmdCon.ReadMessage();
             DatMode = DataMode.Binary;
             Console.WriteLine("Switching to Binary mode.");
             return reply;
@@ -266,62 +278,82 @@ namespace Csci351ftp
 
         private ServerMessage Cd(String dir)
         {
-            ServerMessage reply = con.ReadMessage();
+            SendCmd("CWD", ref cmdCon, dir);
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
         private ServerMessage Cdup()
         {
-            ServerMessage reply = con.ReadMessage();
-            return reply;
+            return Cd("..");
         }
 
         private ServerMessage Dir()
         {
-            ServerMessage reply = con.ReadMessage();
+            ServerMessage reply;
+
+            if (CliMode == ClientMode.Passive)
+            {
+                SendCmd("PASV", ref cmdCon);
+                reply = cmdCon.ReadMessage();
+
+                // Here's what I THINK happens:
+                /*
+                 * cmdCon <- 150 Here comes the directory listing.
+                 * dataCon <- [listing]
+                 * cmdCon <- 226 Directory send OK.
+                 */
+            }
+            else
+            {
+                // send PORT command
+                reply = cmdCon.ReadMessage();
+            }
+            
             return reply;
         }
 
         private ServerMessage GetFile(String fileName)
         {
-            ServerMessage reply = con.ReadMessage();
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
         private ServerMessage Passive()
         {
             //Send PASV
-            ServerMessage reply = con.ReadMessage();
+            ServerMessage reply = cmdCon.ReadMessage();
             CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
-            Console.WriteLine("Switching to {0} mode.", CliMode.ToString());
+            Console.WriteLine("Passive mode {0}.", CliMode == ClientMode.Active ? "off" : "on");
             return reply;
         }
 
         private ServerMessage PutFile(String fileName)
         {
-            ServerMessage reply = con.ReadMessage();
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
         private ServerMessage Pwd()
         {
-            ServerMessage reply = con.ReadMessage();
+            SendCmd("XPWD", ref cmdCon);
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
         private ServerMessage User(String username)
         {
-            SendCmd("USER", username);
-            ServerMessage reply = con.ReadMessage();
+            SendCmd("USER", ref cmdCon, username);
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
         private ServerMessage User()
         {
-            Console.Write("User ({0}): ", con.HostName);
+            Console.Write("User ({0}): ", cmdCon.HostName);
             String username = Console.ReadLine();
-            SendCmd("USER", username);
-            ServerMessage reply = con.ReadMessage();
+            SendCmd("USER", ref cmdCon, username);
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
@@ -329,13 +361,52 @@ namespace Csci351ftp
         {
             Console.Write("Password: ");
             String pass = Console.ReadLine();
-            SendCmd("PASS", pass);
-            ServerMessage reply = con.ReadMessage();
+            SendCmd("PASS", ref cmdCon, pass);
+            ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
 #endregion
 
+        /// <summary>
+        /// Open a data connection (a la passive mode) on the remote to transfer files (or directory info).
+        /// This will extract the IP address and port number from a server message.
+        /// </summary>
+        /// <param name="msg">The server message that provoked opening a new data connection.</param>
+        private void SetDataConnection(ServerMessage msg)
+        {
+            if (msg.Code != PASSIVE_MODE)
+            {
+                Console.Error.Write(
+                    "Attempted to open remote data connection in passive mode.\n{0}",
+                    msg
+                );
+                return;
+            }
+                
+
+            String targetRegex = @"(\d{1,3},){5}\d{1,3}";
+            Match m = Regex.Match(msg.Text, targetRegex);
+
+            if (!m.Success)
+            {
+                Console.Error.Write(
+                    "Attempted to open remote data connection but server seems to have given no connection information:\n{0}",
+                    msg
+                );
+                return;
+            }
+
+            String target = m.Value;
+            String[] byteStrs = target.Split(',');
+            String ipStr = String.Join<String>(".", byteStrs.Take<String>(4));
+            System.Net.IPAddress IP = System.Net.IPAddress.Parse(ipStr);
+
+            String[] octetStrs= { byteStrs[byteStrs.Length-1], byteStrs[byteStrs.Length-2] };
+            int port = (Int32.Parse(octetStrs[0]) * 256) + Int32.Parse(octetStrs[1]);
+
+            dataCon = new FTPConnection(IP, port);
+        }
 
         private void Help(String command)
         {
