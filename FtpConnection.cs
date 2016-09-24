@@ -17,11 +17,14 @@ namespace Csci351ftp
         
         public IPAddress IP { get; private set; }
 
+        public String HostName { get; private set; }
+
         public FTPConnection(String hostName, int bufferSize = 0x40000)
         {
             try
             {
                 IP = Dns.GetHostAddresses(hostName)[0];
+                HostName = Dns.GetHostEntry(IP).HostName;
             }
             catch (SocketException se)
             {
@@ -102,6 +105,13 @@ namespace Csci351ftp
         {
             //stub
             return null;
+        }
+
+        public void SendMessage(String message)
+        {
+            NetworkStream stream = tcp.GetStream();
+            byte[] msgBytes = Encoding.ASCII.GetBytes(message);
+            stream.Write(msgBytes, 0, msgBytes.Length);
         }
 
         /// <summary>

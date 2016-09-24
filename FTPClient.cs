@@ -47,8 +47,7 @@ namespace Csci351ftp
             "passive",
             "put",
             "pwd",
-            "quit",
-            "user"
+            "quit"
         };
 
         // Help message
@@ -66,9 +65,9 @@ namespace Csci351ftp
 	        "passive    --> Toggle passive/active mode\n"+
             "put path   --> Transfer the specified file to the server\n"+
 	        "pwd        --> Print the working directory on the server\n"+
-            "quit       --> Close the connection to the server and terminate\n"+
-	        "user login --> Specify the user name (will prompt for password)";
+            "quit       --> Close the connection to the server and terminate\n";
 
+        //CLI commands
         public const int ASCII = 0;
         public const int BINARY = 1;
         public const int CD = 2;
@@ -83,7 +82,11 @@ namespace Csci351ftp
         public const int QUIT = 11;
         public const int USER = 12;
 
-        public const int NEW_USER = 220;
+        //Server responses
+        public const int NEW_USER =         220;
+        public const int LOGIN_SUCCESS =    230;
+        public const int PASSWORD =         331;
+        
 #endregion
 
 #region Members
@@ -139,32 +142,35 @@ namespace Csci351ftp
                 }
             }
 
+            //This will be replaced by the result message after an operation
+            ServerMessage reply = new ServerMessage(String.Empty);
+
             switch (cid)
             {
                 case QUIT:
-                    Quit();
+                    reply = Quit();
                     break;
                 case ASCII:
-                    Ascii();
+                    reply = Ascii();
                     break;
                 case BINARY:
-                    Binary();
+                    reply = Binary();
                     break;
                 case CD:
-                    Cd(args[0]);
+                    reply = Cd(args[0]);
                     break;
                 case CDUP:
-                    Cdup();
+                    reply = Cdup();
                     break;
                 case DEBUG:
                     IsDebug = (IsDebug ? false : true);
                     Console.WriteLine("Debugging turned {0}.", (IsDebug ? "on" : "off"));
                     break;
                 case DIR:
-                    Dir();
+                    reply = Dir();
                     break;
                 case GET:
-                    GetFile(args[0]);
+                    reply = GetFile(args[0]);
                     break;
                 case HELP:
                     if (args.Length > 0)
@@ -173,21 +179,33 @@ namespace Csci351ftp
                         Help(String.Empty);
                     break;
                 case PASSIVE:
-                    Passive();
+                    reply = Passive();
                     break;
                 case PUT:
-                    PutFile(args[0]);
+                    reply = PutFile(args[0]);
                     break;
                 case PWD:
-                    Pwd();
-                    break;
-                case USER:
-                    User(args[0]);
+                    reply = Pwd();
                     break;
                 default:
                     Console.WriteLine("Unknown command.");
                     break;
             }
+
+            if (!reply.IsEmpty())
+            {
+                Console.Write(reply);
+            }
+        }
+
+        private void SendCmd(String cmd, params string[] args)
+        {
+            String argStr = " " + String.Join(" ", args);
+            String sendStr = String.Format("{0}{1}\r\n", cmd, argStr);
+            // TODO: Change to use debug setting. Keeping as true for now, for testing
+            DebugLine(String.Format("---> {0}", sendStr), true);
+
+            con.SendMessage(sendStr);            
         }
 
         /// <summary>
@@ -201,7 +219,11 @@ namespace Csci351ftp
             switch (reply.Code)
             {
                 case NEW_USER:
-
+                    HandleReply( User() );
+                    break;
+                case PASSWORD:
+                    HandleReply( Password() );
+                    break;
                 default:
                     break;
             }
@@ -209,67 +231,95 @@ namespace Csci351ftp
 
 #region Client->Server operations
 
-        private void Quit()
+        private ServerMessage Quit()
         {
+            SendCmd("QUIT");
+            ServerMessage reply = con.ReadMessage();
             IsOpen = false;
             //Send QUIT
             con.Close();
+            return reply;
         }
 
-        private void Ascii()
+        private ServerMessage Ascii()
         {
             //Send TYPE A
+            ServerMessage reply = con.ReadMessage();
             DatMode = DataMode.ASCII;
             Console.WriteLine("Switching to ASCII mode.");
+            return reply;
         }
 
-        private void Binary()
+        private ServerMessage Binary()
         {
             //Send TYPE I
+            ServerMessage reply = con.ReadMessage();
             DatMode = DataMode.Binary;
             Console.WriteLine("Switching to Binary mode.");
+            return reply;
         }
 
-        private void Cd(String dir)
+        private ServerMessage Cd(String dir)
         {
-
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
-        private void Cdup()
+        private ServerMessage Cdup()
         {
-
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
-        private void Dir()
+        private ServerMessage Dir()
         {
-
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
-        private void GetFile(String fileName)
+        private ServerMessage GetFile(String fileName)
         {
-
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
-        private void Passive()
+        private ServerMessage Passive()
         {
             //Send PASV
+            ServerMessage reply = con.ReadMessage();
             CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
             Console.WriteLine("Switching to {0} mode.", CliMode.ToString());
+            return reply;
         }
 
-        private void PutFile(String fileName)
+        private ServerMessage PutFile(String fileName)
         {
-
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
-        private void Pwd()
+        private ServerMessage Pwd()
         {
-
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
-        private void User(String username)
+        private ServerMessage User()
         {
+            Console.Write("User ({0}): ", con.HostName);
+            String username = Console.ReadLine();
+            SendCmd("USER", username);
+            ServerMessage reply = con.ReadMessage();
+            return reply;
+        }
 
+        private ServerMessage Password()
+        {
+            Console.Write("Password: ");
+            String pass = Console.ReadLine();
+            SendCmd("PASS", pass);
+            ServerMessage reply = con.ReadMessage();
+            return reply;
         }
 
 #endregion
@@ -299,7 +349,7 @@ namespace Csci351ftp
         {
             if (debug)
             {
-                Console.WriteLine(str);
+                Console.Write(str);
             }
         }
     }
