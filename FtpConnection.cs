@@ -52,6 +52,7 @@ namespace Csci351ftp
             catch (Exception eouter)
             {
                 Console.Error.WriteLine(eouter.Message);
+                tcp.Close();
             }
 
             if (tcp.Connected)
@@ -83,6 +84,16 @@ namespace Csci351ftp
             {
 
             }
+        }
+
+        /// <summary>
+        /// Basic a server message incl. a status code.
+        /// </summary>
+        /// <returns></returns>
+        public String ReadMessage()
+        {
+            //keep reading until you hit a string of characters with the form: "\d{3} .*\r\n"
+            return String.Empty;
         }
 
         public void Close()

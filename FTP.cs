@@ -20,6 +20,7 @@ namespace Csci351ftp
             if (args.Length != 1)
             {
                 Console.Error.WriteLine("Usage: [mono] Ftp server");
+                //Think of removing these for final build
                 Console.ReadKey(true);
                 return;
             }
