@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.IO;
 
 namespace Csci351ftp
 {
@@ -123,6 +124,7 @@ namespace Csci351ftp
         public FTPClient(String remote)
         {
             cmdCon = new FTPConnection(remote);
+            dataCon = null;
             IsOpen = true;
             IsDebug = false;
             CliMode = ClientMode.Passive;
@@ -220,6 +222,8 @@ namespace Csci351ftp
 
         /// <summary>
         /// Act based on a server reply with a 3 digit code attached.
+        /// All codes and their messages will be printed, and some will trigger
+        ///     further action from the client.
         /// </summary>
         /// <param name="reply">The ServerMessage to process.</param>
         private void HandleReply(ServerMessage reply)
@@ -241,6 +245,10 @@ namespace Csci351ftp
                     IsOpen = false;
                     cmdCon.Close();
                     break;
+                case PERMISSION_DENIED:
+                    if (dataCon != null)
+                        dataCon.Close();
+                    break;
                 default:
                     break;
             }
@@ -261,6 +269,7 @@ namespace Csci351ftp
         private ServerMessage Ascii()
         {
             //Send TYPE A
+            SendCmd("TYPE", ref cmdCon, "A");
             ServerMessage reply = cmdCon.ReadMessage();
             DatMode = DataMode.ASCII;
             Console.WriteLine("Switching to ASCII mode.");
@@ -270,6 +279,7 @@ namespace Csci351ftp
         private ServerMessage Binary()
         {
             //Send TYPE I
+            SendCmd("TYPE", ref cmdCon, "I");
             ServerMessage reply = cmdCon.ReadMessage();
             DatMode = DataMode.Binary;
             Console.WriteLine("Switching to Binary mode.");
@@ -299,13 +309,6 @@ namespace Csci351ftp
                 // if successful, this will initiate a new data connection
                 HandleReply(reply);
 
-                // Here's what I THINK happens:
-                /*
-                 * cmdCon <- 150 Here comes the directory listing.
-                 * dataCon <- [listing]
-                 * cmdCon <- 226 Directory send OK.
-                 */
-
                 if (!dataCon.IsConnected())
                 {
                     Console.Error.WriteLine("No connection could be established to retrieve the directory listing.");
@@ -331,8 +334,45 @@ namespace Csci351ftp
 
         private ServerMessage GetFile(String fileName)
         {
-            ServerMessage reply = cmdCon.ReadMessage();
-            return reply;
+            ServerMessage reply;
+
+            if (CliMode == ClientMode.Passive)
+            {
+                SendCmd("PASV", ref cmdCon);
+                reply = cmdCon.ReadMessage();
+                // if successful, this will initiate a new data connection
+                HandleReply(reply);
+
+                if (dataCon == null || !dataCon.IsConnected())
+                {
+                    Console.Error.WriteLine("No connection could be established to retrieve the file.");
+                    return reply;
+                }
+
+                SendCmd("RETR", ref dataCon, fileName);
+                reply = cmdCon.ReadMessage();
+                HandleReply(reply);
+
+                if (dataCon == null || !dataCon.IsConnected())
+                {
+                    return new ServerMessage();
+                }
+
+                using (FileStream f = File.Create(fileName))
+                {
+                    dataCon.ReadFile(f, DatMode);
+                }
+                
+
+                return cmdCon.ReadMessage();
+            }
+            else
+            {
+                // send PORT command
+                reply = cmdCon.ReadMessage();
+            }
+
+            return null;
         }
 
         private ServerMessage Passive()
@@ -399,7 +439,12 @@ namespace Csci351ftp
                 );
                 return;
             }
-                
+
+            if (dataCon != null && dataCon.IsConnected())
+            {
+                dataCon.Close();
+            }
+
 
             String targetRegex = @"(\d{1,3},){5}\d{1,3}";
             Match m = Regex.Match(msg.Text, targetRegex);

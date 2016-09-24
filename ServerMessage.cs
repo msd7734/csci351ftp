@@ -24,6 +24,13 @@ namespace Csci351ftp
 
         public String Text { get; private set; }
 
+        public ServerMessage()
+        {
+            PreText = String.Empty;
+            Code = -1;
+            Text = String.Empty;
+        }
+
         public ServerMessage(byte[] b)
         {
 

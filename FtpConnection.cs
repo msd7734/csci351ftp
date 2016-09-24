@@ -142,7 +142,6 @@ namespace Csci351ftp
 
         public String ReadDirectory()
         {
-            Array.Clear(buf, 0, buf.Length);
             NetworkStream stream = tcp.GetStream();
             StringBuilder resultBuilder = new StringBuilder();
 
@@ -157,8 +156,31 @@ namespace Csci351ftp
             return resultBuilder.ToString();
         }
 
-        public ServerMessage ReadFile()
+        public FileStream ReadFile(FileStream file, DataMode mode)
         {
+            NetworkStream stream = tcp.GetStream();
+
+            if (mode == DataMode.ASCII)
+            {
+                using (StreamReader reader = new StreamReader(stream, Encoding.ASCII))
+                {
+                    String line;
+                    
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        line = line + "\r\n";
+                        byte[] b = Encoding.ASCII.GetBytes(line);
+                        file.Write(b, 0, b.Length);
+                    }
+                    
+                }
+                return file;
+            }
+            else
+            {
+                // implicitly binary mode
+            }
+
             //stub
             return null;
         }
@@ -180,7 +202,14 @@ namespace Csci351ftp
 
         public bool IsConnected()
         {
-            return tcp.Connected;
+            try
+            {
+                return tcp.Connected;
+            }
+            catch (NullReferenceException nre)
+            {
+                return false;
+            }
         }
     }
 }
