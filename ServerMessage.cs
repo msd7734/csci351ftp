@@ -26,6 +26,8 @@ namespace Csci351ftp
 
         public ServerMessage(byte[] b)
         {
+
+
             StringBuilder msg = new StringBuilder(b.Length);
             for (int i = 0; i < b.Length; ++i)
             {
@@ -36,7 +38,17 @@ namespace Csci351ftp
 
         public ServerMessage(String s)
         {
-            _initialize(s);
+            if (s.Length < 3)
+            {
+                PreText = String.Empty;
+                Code = -1;
+                Text = String.Empty;
+            }
+            else
+            {
+                _initialize(s);
+            }
+            
         }
 
         private void _initialize(String b)
@@ -61,9 +73,19 @@ namespace Csci351ftp
                 Text = parts[1];
         }
 
+        public bool IsEmpty()
+        {
+            return String.IsNullOrWhiteSpace(PreText) &&
+                String.IsNullOrWhiteSpace(Text) &&
+                Code < 100;
+        }
+
         public override string ToString()
         {
-            return String.Format("{0}{1}{2}", PreText, Code, Text);
+            if (!IsEmpty())
+                return String.Format("{0}{1}{2}", PreText, Code, Text);
+            else
+                return String.Empty;
         }
     }
 }

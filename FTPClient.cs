@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Linq;
 
 namespace Csci351ftp
@@ -114,6 +115,11 @@ namespace Csci351ftp
             IsDebug = false;
             CliMode = ClientMode.Passive;
             DatMode = DataMode.Binary;
+
+            // This needs to be done threadedwise I guess...
+            ServerMessage initialMsg = con.ReadMessage();
+            Console.WriteLine(initialMsg);
+            HandleReply(initialMsg);
         }
 
         /// <summary>
@@ -135,48 +141,148 @@ namespace Csci351ftp
             switch (cid)
             {
                 case QUIT:
-                    IsOpen = false;
-                    //Send QUIT
-                    con.Close();
+                    Quit();
                     break;
                 case ASCII:
-                    //Send TYPE A
-                    DatMode = DataMode.ASCII;
-                    Console.WriteLine("Switching to ASCII mode.");
+                    Ascii();
                     break;
                 case BINARY:
-                    //Send TYPE I
-                    DatMode = DataMode.Binary;
-                    Console.WriteLine("Switching to Binary mode.");
+                    Binary();
                     break;
                 case CD:
+                    Cd(args[0]);
                     break;
                 case CDUP:
+                    Cdup();
                     break;
                 case DEBUG:
                     IsDebug = (IsDebug ? false : true);
                     Console.WriteLine("Debugging turned {0}.", (IsDebug ? "on" : "off"));
                     break;
                 case DIR:
+                    Dir();
                     break;
                 case GET:
+                    GetFile(args[0]);
                     break;
                 case HELP:
+                    if (args.Length > 0)
+                        Help(args[0]);
+                    else
+                        Help(String.Empty);
                     break;
                 case PASSIVE:
-                    //Send PASV
-                    CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
-                    Console.WriteLine("Switching to {0} mode.", CliMode.ToString());
+                    Passive();
                     break;
                 case PUT:
+                    PutFile(args[0]);
                     break;
                 case PWD:
+                    Pwd();
                     break;
                 case USER:
+                    User(args[0]);
                     break;
                 default:
                     Console.WriteLine("Unknown command.");
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Act given a server reply with a 3 digit code attached.
+        /// </summary>
+        /// <param name="reply">The ServerMessage to process.</param>
+        private void HandleReply(ServerMessage reply)
+        {
+            // huge switch statement?
+        }
+
+#region Client->Server operations
+
+        private void Quit()
+        {
+            IsOpen = false;
+            //Send QUIT
+            con.Close();
+        }
+
+        private void Ascii()
+        {
+            //Send TYPE A
+            DatMode = DataMode.ASCII;
+            Console.WriteLine("Switching to ASCII mode.");
+        }
+
+        private void Binary()
+        {
+            //Send TYPE I
+            DatMode = DataMode.Binary;
+            Console.WriteLine("Switching to Binary mode.");
+        }
+
+        private void Cd(String dir)
+        {
+
+        }
+
+        private void Cdup()
+        {
+
+        }
+
+        private void Dir()
+        {
+
+        }
+
+        private void GetFile(String fileName)
+        {
+
+        }
+
+        private void Passive()
+        {
+            //Send PASV
+            CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
+            Console.WriteLine("Switching to {0} mode.", CliMode.ToString());
+        }
+
+        private void PutFile(String fileName)
+        {
+
+        }
+
+        private void Pwd()
+        {
+
+        }
+
+        private void User(String username)
+        {
+
+        }
+
+#endregion
+
+
+        private void Help(String command)
+        {
+            if (String.IsNullOrWhiteSpace(command))
+            {
+                Console.WriteLine(HELP_MESSAGE);
+            }
+            else
+            {
+                String[] lines = HELP_MESSAGE.Split('\n');
+                foreach (String l in lines) {
+                    if (command.Length <= l.Length && l.Substring(0, command.Length) == command)
+                    {
+                        Console.WriteLine(l);
+                        return;
+                    }
+                }
+                Console.WriteLine("Inavlid help command {0}.", command);
             }
         }
 

@@ -14,9 +14,7 @@ namespace Csci351ftp
     {
         private TcpClient tcp;
         private byte[] buf;
-        private NetworkStream stream;
-
-
+        
         public IPAddress IP { get; private set; }
 
         public FTPConnection(String hostName, int bufferSize = 0x40000)
@@ -55,9 +53,10 @@ namespace Csci351ftp
                 tcp.Close();
             }
 
+            /*
             if (tcp.Connected)
             {
-                stream = tcp.GetStream();
+                NetworkStream stream = tcp.GetStream();
                 //test
                 int bytesRead = stream.Read(buf, 0, buf.Length);
                 Console.WriteLine("Bytes read from server: " + bytesRead.ToString());
@@ -68,6 +67,7 @@ namespace Csci351ftp
                 }
                 Console.WriteLine(resp.ToString());
             }
+             * */
             
         }
 
@@ -82,7 +82,7 @@ namespace Csci351ftp
             }
             catch (NullReferenceException nre)
             {
-
+                // If it's never been opened, no need to do anything
             }
         }
 
@@ -90,12 +90,17 @@ namespace Csci351ftp
         /// Basic a server message incl. a status code.
         /// </summary>
         /// <returns></returns>
-        public String ReadMessage()
+        public ServerMessage ReadMessage()
         {
-            //keep reading until you hit a string of characters with the form: "\d{3} .*\r\n"
-            return String.Empty;
+            Array.Clear(buf, 0, buf.Length);
+            NetworkStream stream = tcp.GetStream();
+            int bytesRead = stream.Read(buf, 0, buf.Length);
+            return new ServerMessage(buf.Take<byte>(bytesRead).ToArray<byte>());
         }
 
+        /// <summary>
+        /// Close the underlying TCPClient
+        /// </summary>
         public void Close()
         {
             tcp.Close();

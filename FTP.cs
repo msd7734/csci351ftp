@@ -61,8 +61,7 @@ namespace Csci351ftp
             if (arr.Count < 2)
                 return new List<T>();
             else {
-                arr.RemoveAt(0);
-                return arr;
+                return arr.SkipWhile<T>((x, index) => index == 0).ToList();
             }
         }
     }

@@ -45,6 +45,7 @@
     <Compile Include="FTPClient.cs" />
     <Compile Include="FTPConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
