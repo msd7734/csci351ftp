@@ -87,7 +87,7 @@ namespace Csci351ftp
         }
 
         /// <summary>
-        /// Basic a server message incl. a status code.
+        /// Read from the server expecting a single command message including a status code.
         /// </summary>
         /// <returns></returns>
         public ServerMessage ReadMessage()
@@ -96,6 +96,12 @@ namespace Csci351ftp
             NetworkStream stream = tcp.GetStream();
             int bytesRead = stream.Read(buf, 0, buf.Length);
             return new ServerMessage(buf.Take<byte>(bytesRead).ToArray<byte>());
+        }
+
+        public ServerMessage[] ReadFile()
+        {
+            //stub
+            return null;
         }
 
         /// <summary>

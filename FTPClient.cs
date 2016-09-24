@@ -82,6 +82,8 @@ namespace Csci351ftp
         public const int PWD = 10;
         public const int QUIT = 11;
         public const int USER = 12;
+
+        public const int NEW_USER = 220;
 #endregion
 
 #region Members
@@ -116,9 +118,8 @@ namespace Csci351ftp
             CliMode = ClientMode.Passive;
             DatMode = DataMode.Binary;
 
-            // This needs to be done threadedwise I guess...
             ServerMessage initialMsg = con.ReadMessage();
-            Console.WriteLine(initialMsg);
+            //Console.WriteLine(initialMsg); <-- do this in HandleReply
             HandleReply(initialMsg);
         }
 
@@ -195,7 +196,15 @@ namespace Csci351ftp
         /// <param name="reply">The ServerMessage to process.</param>
         private void HandleReply(ServerMessage reply)
         {
-            // huge switch statement?
+            Console.Write(reply);
+
+            switch (reply.Code)
+            {
+                case NEW_USER:
+
+                default:
+                    break;
+            }
         }
 
 #region Client->Server operations
