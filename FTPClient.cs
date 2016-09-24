@@ -235,7 +235,7 @@ namespace Csci351ftp
                     HandleReply( Password() );
                     break;
                 case PASSIVE_MODE:
-
+                    SetDataConnection(reply);
                     break;
                 case UNAVAILABLE:
                     IsOpen = false;
@@ -296,6 +296,8 @@ namespace Csci351ftp
             {
                 SendCmd("PASV", ref cmdCon);
                 reply = cmdCon.ReadMessage();
+                // if successful, this will initiate a new data connection
+                HandleReply(reply);
 
                 // Here's what I THINK happens:
                 /*
@@ -303,6 +305,20 @@ namespace Csci351ftp
                  * dataCon <- [listing]
                  * cmdCon <- 226 Directory send OK.
                  */
+
+                if (!dataCon.IsConnected())
+                {
+                    Console.Error.WriteLine("No connection could be established to retrieve the directory listing.");
+                    return reply;
+                }
+
+                SendCmd("LIST", ref dataCon);
+                reply = cmdCon.ReadMessage();
+                HandleReply(reply);
+
+                Console.Write( dataCon.ReadDirectory() );
+
+                return cmdCon.ReadMessage();
             }
             else
             {
@@ -402,7 +418,7 @@ namespace Csci351ftp
             String ipStr = String.Join<String>(".", byteStrs.Take<String>(4));
             System.Net.IPAddress IP = System.Net.IPAddress.Parse(ipStr);
 
-            String[] octetStrs= { byteStrs[byteStrs.Length-1], byteStrs[byteStrs.Length-2] };
+            String[] octetStrs= { byteStrs[byteStrs.Length-2], byteStrs[byteStrs.Length-1] };
             int port = (Int32.Parse(octetStrs[0]) * 256) + Int32.Parse(octetStrs[1]);
 
             dataCon = new FTPConnection(IP, port);

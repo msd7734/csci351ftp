@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.IO;
 
 namespace Csci351ftp
 {
@@ -137,6 +138,23 @@ namespace Csci351ftp
             NetworkStream stream = tcp.GetStream();
             int bytesRead = stream.Read(buf, 0, buf.Length);
             return new ServerMessage(buf.Take<byte>(bytesRead).ToArray<byte>());
+        }
+
+        public String ReadDirectory()
+        {
+            Array.Clear(buf, 0, buf.Length);
+            NetworkStream stream = tcp.GetStream();
+            StringBuilder resultBuilder = new StringBuilder();
+
+            using (StreamReader reader = new StreamReader(stream, Encoding.ASCII))
+            {
+                String line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    resultBuilder.Append(line+"\r\n");
+                }
+            }
+            return resultBuilder.ToString();
         }
 
         public ServerMessage ReadFile()
