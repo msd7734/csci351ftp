@@ -47,7 +47,8 @@ namespace Csci351ftp
             "passive",
             "put",
             "pwd",
-            "quit"
+            "quit",
+            "user"
         };
 
         // Help message
@@ -65,7 +66,8 @@ namespace Csci351ftp
 	        "passive    --> Toggle passive/active mode\n"+
             "put path   --> Transfer the specified file to the server\n"+
 	        "pwd        --> Print the working directory on the server\n"+
-            "quit       --> Close the connection to the server and terminate\n";
+            "quit       --> Close the connection to the server and terminate\n"+
+            "user login --> Specify the user name (will prompt for password)";
 
         //CLI commands
         public const int ASCII = 0;
@@ -187,6 +189,9 @@ namespace Csci351ftp
                 case PWD:
                     reply = Pwd();
                     break;
+                case USER:
+                    reply = User(args[0]);
+                    break;
                 default:
                     Console.WriteLine("Unknown command.");
                     break;
@@ -194,7 +199,7 @@ namespace Csci351ftp
 
             if (!reply.IsEmpty())
             {
-                Console.Write(reply);
+                HandleReply(reply);
             }
         }
 
@@ -300,6 +305,13 @@ namespace Csci351ftp
 
         private ServerMessage Pwd()
         {
+            ServerMessage reply = con.ReadMessage();
+            return reply;
+        }
+
+        private ServerMessage User(String username)
+        {
+            SendCmd("USER", username);
             ServerMessage reply = con.ReadMessage();
             return reply;
         }
