@@ -18,6 +18,17 @@ namespace Csci351ftp
         /// </summary>
         private static String codePattern = "^\\d{3}(?=\\s)";
 
+        /// <summary>
+        /// Indicates whether the given line is a terminal line based on a ServerMessage's criteria.
+        /// </summary>
+        /// <param name="line">The line to parse.</param>
+        /// <returns>Whether the line is the end of a message on the server command connection.</returns>
+        public static bool IsLastMessageLine(String line)
+        {
+            Match m = Regex.Match(line, codePattern);
+            return m.Success;
+        }
+
         public String PreText { get; private set; }
 
         public int Code { get; private set; }
@@ -33,8 +44,6 @@ namespace Csci351ftp
 
         public ServerMessage(byte[] b)
         {
-
-
             StringBuilder msg = new StringBuilder(b.Length);
             for (int i = 0; i < b.Length; ++i)
             {
