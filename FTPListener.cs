@@ -66,9 +66,35 @@ namespace Csci351ftp
             return resultBuilder.ToString();
         }
 
-        public void AcceptFile(DataMode mode)
+        public FileStream AcceptFile(FileStream file, DataMode mode)
         {
+            using (TcpClient con = tcp.AcceptTcpClient())
+            {
+                NetworkStream stream = con.GetStream();
 
+                if (mode == DataMode.ASCII)
+                {
+                    using (StreamReader reader = new StreamReader(stream, Encoding.ASCII))
+                    {
+                        String line;
+
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            line = line + "\r\n";
+                            byte[] b = Encoding.ASCII.GetBytes(line);
+                            file.Write(b, 0, b.Length);
+                        }
+
+                    }
+                    
+                }
+
+                else
+                {
+                    // implicitly binary mode
+                }
+            }
+            return file;
         }
     }
 }

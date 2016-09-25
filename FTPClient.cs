@@ -210,7 +210,7 @@ namespace Csci351ftp
                 HandleReply(reply);
             }
         }
-
+        //TODO: Remove the stupid "ref con" (unneeded...)
         private void SendCmd(String cmd, ref FTPConnection con, params string[] args)
         {
             String argStr = " " + String.Join(" ", args);
@@ -326,7 +326,6 @@ namespace Csci351ftp
             }
             else
             {
-                // send PORT command
                 using (FTPListener dirCon = new FTPListener())
                 {
                     String commaSepIP = String.Join(",", dirCon.LocalIP.ToString().Split('.'));
@@ -370,7 +369,7 @@ namespace Csci351ftp
                     return reply;
                 }
 
-                SendCmd("RETR", ref dataCon, fileName);
+                SendCmd("RETR", ref cmdCon, fileName);
                 reply = cmdCon.ReadMessage();
                 HandleReply(reply);
 
@@ -389,11 +388,38 @@ namespace Csci351ftp
             }
             else
             {
-                // send PORT command
-                reply = cmdCon.ReadMessage();
-            }
+                using (FTPListener fileCon = new FTPListener())
+                {
+                    String commaSepIP = String.Join(",", fileCon.LocalIP.ToString().Split('.'));
+                    int octet1 = fileCon.Port / 256;
+                    int octet2 = fileCon.Port % 256;
+                    String ipParam = String.Format("{0},{1},{2}", commaSepIP, octet1, octet2);
 
-            return null;
+                    SendCmd("PORT", ref cmdCon, ipParam);
+                    reply = cmdCon.ReadMessage();
+                    if (reply.Code != SUCCESS)
+                    {
+                        return reply;
+                    }
+                    HandleReply(reply);
+
+                    SendCmd("RETR", ref cmdCon, fileName);
+                    reply = cmdCon.ReadMessage();
+                    HandleReply(reply);
+
+                    if (reply.Code == PERMISSION_DENIED)
+                    {
+                        return new ServerMessage();
+                    }
+
+                    using (FileStream f = File.Create(fileName))
+                    {
+                        fileCon.AcceptFile(f, DatMode);
+                    }
+                }
+
+                return cmdCon.ReadMessage();
+            }
         }
 
         private void Passive()
