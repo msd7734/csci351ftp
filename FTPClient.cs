@@ -216,7 +216,7 @@ namespace Csci351ftp
             String argStr = " " + String.Join(" ", args);
             String sendStr = String.Format("{0}{1}\r\n", cmd, argStr);
             // TODO: Change to use debug setting. Keeping as true for now, for testing
-            DebugLine(String.Format("---> {0}", sendStr), true);
+            DebugLine(String.Format("---> {0}", sendStr), IsDebug);
 
             cmdCon.SendMessage(sendStr);            
         }
