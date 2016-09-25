@@ -92,6 +92,25 @@ namespace Csci351ftp
                 else
                 {
                     // implicitly binary mode
+                    using (BinaryReader reader = new BinaryReader(stream))
+                    {
+                        int bytesRead = 0;
+
+                        try
+                        {
+                            do
+                            {
+                                Array.Clear(buf, 0, buf.Length);
+                                bytesRead = reader.Read(buf, 0, buf.Length);
+                                file.Write(buf, 0, bytesRead);
+                            }
+                            while (bytesRead != 0);
+                        }
+                        catch (IOException ioe)
+                        {
+                            Console.Error.WriteLine(ioe.Message);
+                        }
+                    }
                 }
             }
             return file;
