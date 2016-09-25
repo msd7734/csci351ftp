@@ -86,6 +86,7 @@ namespace Csci351ftp
         public const int USER = 12;
 
         //Server responses
+        public const int SUCCESS =              200;
         public const int NEW_USER =             220;
         public const int PASSIVE_MODE =         227;
         public const int LOGIN_SUCCESS =        230;
@@ -152,7 +153,7 @@ namespace Csci351ftp
             }
 
             //This will be replaced by the result message after an operation
-            ServerMessage reply = new ServerMessage(String.Empty);
+            ServerMessage reply = new ServerMessage();
 
             switch (cid)
             {
@@ -188,7 +189,7 @@ namespace Csci351ftp
                         Help(String.Empty);
                     break;
                 case PASSIVE:
-                    reply = Passive();
+                    Passive();
                     break;
                 case PUT:
                     reply = PutFile(args[0]);
@@ -315,7 +316,7 @@ namespace Csci351ftp
                     return reply;
                 }
 
-                SendCmd("LIST", ref dataCon);
+                SendCmd("LIST", ref cmdCon);
                 reply = cmdCon.ReadMessage();
                 HandleReply(reply);
 
@@ -326,10 +327,30 @@ namespace Csci351ftp
             else
             {
                 // send PORT command
-                reply = cmdCon.ReadMessage();
+                using (FTPListener dirCon = new FTPListener())
+                {
+                    String commaSepIP = String.Join(",", dirCon.LocalIP.ToString().Split('.'));
+                    int octet1 = dirCon.Port / 256;
+                    int octet2 = dirCon.Port % 256;
+                    String ipParam = String.Format("{0},{1},{2}", commaSepIP, octet1, octet2);
+
+                    SendCmd("PORT", ref cmdCon, ipParam);
+                    reply = cmdCon.ReadMessage();
+                    if (reply.Code != SUCCESS)
+                    {
+                        return reply;
+                    }
+                    HandleReply(reply);
+
+                    SendCmd("LIST", ref cmdCon);
+                    reply = cmdCon.ReadMessage();
+                    HandleReply(reply);
+
+                    Console.Write( dirCon.AcceptDirectory() );
+                }
+
+                return cmdCon.ReadMessage();
             }
-            
-            return reply;
         }
 
         private ServerMessage GetFile(String fileName)
@@ -375,13 +396,10 @@ namespace Csci351ftp
             return null;
         }
 
-        private ServerMessage Passive()
+        private void Passive()
         {
-            //Send PASV
-            ServerMessage reply = cmdCon.ReadMessage();
             CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
             Console.WriteLine("Passive mode {0}.", CliMode == ClientMode.Active ? "off" : "on");
-            return reply;
         }
 
         private ServerMessage PutFile(String fileName)

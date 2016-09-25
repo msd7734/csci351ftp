@@ -124,14 +124,14 @@ namespace Csci351ftp
             }
             catch (NullReferenceException nre)
             {
-                // If it's never been opened, no need to do anything
+                // If it's already closed, no need to do anythign
             }
         }
 
         /// <summary>
         /// Read from the server expecting a single command message including a status code.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A ServerMessage object containing the parsed status code and message.</returns>
         public ServerMessage ReadMessage()
         {
             Array.Clear(buf, 0, buf.Length);
