@@ -25,15 +25,6 @@ namespace Csci351ftp
     /// </summary>
     public class FTPClient
     {
-
-        /*
-         * FYI:
-         * An FTP reply consists of a three digit number (transmitted as
-         *  three alphanumeric characters) followed by some text.  The number
-         *  is intended for use by automata to determine what state to enter
-         *  next; the text is intended for the human user.
-         */
-
         #region Constants
         // Information to parse commands
         public static readonly string[] COMMANDS = {
@@ -132,7 +123,6 @@ namespace Csci351ftp
             DatMode = DataMode.Binary;
 
             ServerMessage initialMsg = cmdCon.ReadMessage();
-            //Console.WriteLine(initialMsg); <-- do this in HandleReply
             HandleReply(initialMsg);
         }
 
@@ -210,12 +200,11 @@ namespace Csci351ftp
                 HandleReply(reply);
             }
         }
-        //TODO: Remove the stupid "ref con" (unneeded...)
-        private void SendCmd(String cmd, ref FTPConnection con, params string[] args)
+
+        private void SendCmd(String cmd, params string[] args)
         {
             String argStr = " " + String.Join(" ", args);
             String sendStr = String.Format("{0}{1}\r\n", cmd, argStr);
-            // TODO: Change to use debug setting. Keeping as true for now, for testing
             DebugLine(String.Format("---> {0}", sendStr), IsDebug);
 
             cmdCon.SendMessage(sendStr);            
@@ -259,7 +248,7 @@ namespace Csci351ftp
 
         private ServerMessage Quit()
         {
-            SendCmd("QUIT", ref cmdCon);
+            SendCmd("QUIT");
             ServerMessage reply = cmdCon.ReadMessage();
             IsOpen = false;
             //Send QUIT
@@ -270,7 +259,7 @@ namespace Csci351ftp
         private ServerMessage Ascii()
         {
             //Send TYPE A
-            SendCmd("TYPE", ref cmdCon, "A");
+            SendCmd("TYPE", "A");
             ServerMessage reply = cmdCon.ReadMessage();
             DatMode = DataMode.ASCII;
             Console.WriteLine("Switching to ASCII mode.");
@@ -280,7 +269,7 @@ namespace Csci351ftp
         private ServerMessage Binary()
         {
             //Send TYPE I
-            SendCmd("TYPE", ref cmdCon, "I");
+            SendCmd("TYPE", "I");
             ServerMessage reply = cmdCon.ReadMessage();
             DatMode = DataMode.Binary;
             Console.WriteLine("Switching to Binary mode.");
@@ -289,7 +278,7 @@ namespace Csci351ftp
 
         private ServerMessage Cd(String dir)
         {
-            SendCmd("CWD", ref cmdCon, dir);
+            SendCmd("CWD", dir);
             ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
@@ -305,7 +294,7 @@ namespace Csci351ftp
 
             if (CliMode == ClientMode.Passive)
             {
-                SendCmd("PASV", ref cmdCon);
+                SendCmd("PASV");
                 reply = cmdCon.ReadMessage();
                 // if successful, this will initiate a new data connection
                 HandleReply(reply);
@@ -316,7 +305,7 @@ namespace Csci351ftp
                     return reply;
                 }
 
-                SendCmd("LIST", ref cmdCon);
+                SendCmd("LIST");
                 reply = cmdCon.ReadMessage();
                 HandleReply(reply);
 
@@ -333,7 +322,7 @@ namespace Csci351ftp
                     int octet2 = dirCon.Port % 256;
                     String ipParam = String.Format("{0},{1},{2}", commaSepIP, octet1, octet2);
 
-                    SendCmd("PORT", ref cmdCon, ipParam);
+                    SendCmd("PORT", ipParam);
                     reply = cmdCon.ReadMessage();
                     if (reply.Code != SUCCESS)
                     {
@@ -341,7 +330,7 @@ namespace Csci351ftp
                     }
                     HandleReply(reply);
 
-                    SendCmd("LIST", ref cmdCon);
+                    SendCmd("LIST");
                     reply = cmdCon.ReadMessage();
                     HandleReply(reply);
 
@@ -358,7 +347,7 @@ namespace Csci351ftp
 
             if (CliMode == ClientMode.Passive)
             {
-                SendCmd("PASV", ref cmdCon);
+                SendCmd("PASV");
                 reply = cmdCon.ReadMessage();
                 // if successful, this will initiate a new data connection
                 HandleReply(reply);
@@ -369,7 +358,7 @@ namespace Csci351ftp
                     return reply;
                 }
 
-                SendCmd("RETR", ref cmdCon, fileName);
+                SendCmd("RETR", fileName);
                 reply = cmdCon.ReadMessage();
                 HandleReply(reply);
 
@@ -395,7 +384,7 @@ namespace Csci351ftp
                     int octet2 = fileCon.Port % 256;
                     String ipParam = String.Format("{0},{1},{2}", commaSepIP, octet1, octet2);
 
-                    SendCmd("PORT", ref cmdCon, ipParam);
+                    SendCmd("PORT", ipParam);
                     reply = cmdCon.ReadMessage();
                     if (reply.Code != SUCCESS)
                     {
@@ -403,7 +392,7 @@ namespace Csci351ftp
                     }
                     HandleReply(reply);
 
-                    SendCmd("RETR", ref cmdCon, fileName);
+                    SendCmd("RETR", fileName);
                     reply = cmdCon.ReadMessage();
                     HandleReply(reply);
 
@@ -436,14 +425,14 @@ namespace Csci351ftp
 
         private ServerMessage Pwd()
         {
-            SendCmd("XPWD", ref cmdCon);
+            SendCmd("XPWD");
             ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
 
         private ServerMessage User(String username)
         {
-            SendCmd("USER", ref cmdCon, username);
+            SendCmd("USER", username);
             ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
@@ -452,7 +441,7 @@ namespace Csci351ftp
         {
             Console.Write("User ({0}): ", cmdCon.HostName);
             String username = Console.ReadLine();
-            SendCmd("USER", ref cmdCon, username);
+            SendCmd("USER", username);
             ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }
@@ -461,7 +450,7 @@ namespace Csci351ftp
         {
             Console.Write("Password: ");
             String pass = Console.ReadLine();
-            SendCmd("PASS", ref cmdCon, pass);
+            SendCmd("PASS", pass);
             ServerMessage reply = cmdCon.ReadMessage();
             return reply;
         }

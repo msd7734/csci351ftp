@@ -55,24 +55,7 @@ namespace Csci351ftp
             {
                 Console.Error.WriteLine(eouter.Message);
                 tcp.Close();
-            }
-
-            /*
-            if (tcp.Connected)
-            {
-                NetworkStream stream = tcp.GetStream();
-                //test
-                int bytesRead = stream.Read(buf, 0, buf.Length);
-                Console.WriteLine("Bytes read from server: " + bytesRead.ToString());
-                StringBuilder resp = new StringBuilder(bytesRead);
-                for (int i = 0; i < bytesRead; ++i)
-                {
-                    resp.Append(Convert.ToChar(buf[i]));
-                }
-                Console.WriteLine(resp.ToString());
-            }
-             * */
-            
+            }           
         }
 
         public FTPConnection(IPAddress address, int port = 21, int bufferSize = 0x40000)
