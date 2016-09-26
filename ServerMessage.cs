@@ -1,4 +1,8 @@
-﻿using System;
+﻿/*
+ * By: Matthew Dennis (msd7734)
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,13 +32,27 @@ namespace Csci351ftp
             Match m = Regex.Match(line, codePattern);
             return m.Success;
         }
-
+        
+        /// <summary>
+        /// The text held at the head of a message, before the final line.
+        /// </summary>
         public String PreText { get; private set; }
 
+        /// <summary>
+        /// The 3 digit code that represents the type of server message.
+        /// </summary>
         public int Code { get; private set; }
 
+        /// <summary>
+        /// The text found after the 3 digit code on the last line.
+        /// Split up this way since this text is sometimes needed while any "PreText"
+        ///     can generally be discarded.
+        /// </summary>
         public String Text { get; private set; }
 
+        /// <summary>
+        /// Create an empty/dummy server message.
+        /// </summary>
         public ServerMessage()
         {
             PreText = String.Empty;
@@ -42,6 +60,10 @@ namespace Csci351ftp
             Text = String.Empty;
         }
 
+        /// <summary>
+        /// Create a server message from the given raw bytes.
+        /// </summary>
+        /// <param name="b">The bytes to interpret</param>
         public ServerMessage(byte[] b)
         {
             StringBuilder msg = new StringBuilder(b.Length);
@@ -52,6 +74,10 @@ namespace Csci351ftp
             _initialize(msg.ToString());
         }
 
+        /// <summary>
+        /// Create a server message from the given string.
+        /// </summary>
+        /// <param name="s">String to parse</param>
         public ServerMessage(String s)
         {
             if (s.Length < 3)
@@ -67,6 +93,10 @@ namespace Csci351ftp
             
         }
 
+        /// <summary>
+        /// Parse the given initialization data and populate the members.
+        /// </summary>
+        /// <param name="b"></param>
         private void _initialize(String b)
         {
             Match m = Regex.Match(b, codePattern, RegexOptions.Multiline);
@@ -89,6 +119,10 @@ namespace Csci351ftp
                 Text = parts[1];
         }
 
+        /// <summary>
+        /// Whether the message can be considered empty.
+        /// </summary>
+        /// <returns>True if there is no pretext, no main message text, and an invalid message code.</returns>
         public bool IsEmpty()
         {
             return String.IsNullOrWhiteSpace(PreText) &&
@@ -96,6 +130,10 @@ namespace Csci351ftp
                 Code < 100;
         }
 
+        /// <summary>
+        /// Get the original message from the server as received.
+        /// </summary>
+        /// <returns>A potentially multiline string that was received from the server.</returns>
         public override string ToString()
         {
             if (!IsEmpty())

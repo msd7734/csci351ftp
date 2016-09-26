@@ -1,4 +1,8 @@
-﻿using System;
+﻿/*
+ * By: Matthew Dennis (msd7734)
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -113,6 +117,10 @@ namespace Csci351ftp
         public DataMode DatMode { get; private set; }
 #endregion
 
+        /// <summary>
+        /// Construct an FTP client to connect to the given remote.
+        /// </summary>
+        /// <param name="remote"></param>
         public FTPClient(String remote)
         {
             try
@@ -209,6 +217,11 @@ namespace Csci351ftp
             }
         }
 
+        /// <summary>
+        /// Send a command to the server.
+        /// </summary>
+        /// <param name="cmd">The identifying command term.</param>
+        /// <param name="args">Any arguments to go with the command.</param>
         private void SendCmd(String cmd, params string[] args)
         {
             String argStr = " " + String.Join(" ", args);
@@ -254,6 +267,10 @@ namespace Csci351ftp
 
 #region Client->Server operations
 
+        /// <summary>
+        /// Quit from the server and end the connection.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Quit()
         {
             try
@@ -273,7 +290,11 @@ namespace Csci351ftp
             }
             
         }
-
+        
+        /// <summary>
+        /// Set the server to ASCII mode.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Ascii()
         {
             //Send TYPE A
@@ -284,6 +305,10 @@ namespace Csci351ftp
             return reply;
         }
 
+        /// <summary>
+        /// Set the server to Binary mode.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Binary()
         {
             //Send TYPE I
@@ -294,6 +319,11 @@ namespace Csci351ftp
             return reply;
         }
 
+        /// <summary>
+        /// Change the working directory.
+        /// </summary>
+        /// <param name="dir">The new directory</param>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Cd(String dir)
         {
             SendCmd("CWD", dir);
@@ -301,11 +331,19 @@ namespace Csci351ftp
             return reply;
         }
 
+        /// <summary>
+        /// Go up one level in the directory structure.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Cdup()
         {
             return Cd("..");
         }
 
+        /// <summary>
+        /// Get a list of all the files in the current working directory from the server.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Dir()
         {
             ServerMessage reply;
@@ -359,6 +397,11 @@ namespace Csci351ftp
             }
         }
 
+        /// <summary>
+        /// Get a file from the server.
+        /// </summary>
+        /// <param name="fileName">The name of the file to request.</param>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage GetFile(String fileName)
         {
             ServerMessage reply;
@@ -429,18 +472,30 @@ namespace Csci351ftp
             }
         }
 
+        /// <summary>
+        /// Remains a NOOP because the client is not intended to support file uploading.
+        /// </summary>
+        /// <param name="file">The name of the file</param>
+        /// <returns>An empty ServerMessage</returns>
+        private ServerMessage PutFile(String file)
+        {
+            return new ServerMessage();
+        }
+
+        /// <summary>
+        /// Set the client to modify its actions to conform with passive mode.
+        /// </summary>
         private void Passive()
         {
             CliMode = (CliMode == ClientMode.Active ? ClientMode.Passive : ClientMode.Active);
             Console.WriteLine("Passive mode {0}.", CliMode == ClientMode.Active ? "off" : "on");
         }
 
-        private ServerMessage PutFile(String fileName)
-        {
-            ServerMessage reply = cmdCon.ReadMessage();
-            return reply;
-        }
 
+        /// <summary>
+        /// Print the current working directory from the server.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Pwd()
         {
             SendCmd("XPWD");
@@ -448,6 +503,11 @@ namespace Csci351ftp
             return reply;
         }
 
+        /// <summary>
+        /// Send the server a username to log in.
+        /// </summary>
+        /// <param name="username">The username used to idenfity the client.</param>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage User(String username)
         {
             SendCmd("USER", username);
@@ -455,6 +515,10 @@ namespace Csci351ftp
             return reply;
         }
 
+        /// <summary>
+        /// Pause the client to prompt for a username to log in with.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage User()
         {
             Console.Write("User ({0}): ", cmdCon.HostName);
@@ -464,6 +528,10 @@ namespace Csci351ftp
             return reply;
         }
 
+        /// <summary>
+        /// Pause the client to prompt for a password to log in with.
+        /// </summary>
+        /// <returns>A server message in response to this action.</returns>
         private ServerMessage Password()
         {
             Console.Write("Password: ");
@@ -520,6 +588,12 @@ namespace Csci351ftp
             dataCon = new FTPConnection(IP, port);
         }
 
+        /// <summary>
+        /// Print the help information associated with a given command.
+        /// </summary>
+        /// <param name="command">The command to get help information for.
+        /// If empty, help info for all commands will be printed.
+        /// </param>
         private void Help(String command)
         {
             if (String.IsNullOrWhiteSpace(command))
@@ -540,6 +614,11 @@ namespace Csci351ftp
             }
         }
 
+        /// <summary>
+        /// Write a line to the console based on the client's debug settings.
+        /// </summary>
+        /// <param name="str">The line to write</param>
+        /// <param name="debug">The debug state</param>
         private void DebugLine(String str, bool debug)
         {
             if (debug)

@@ -1,4 +1,8 @@
-﻿using System;
+﻿/*
+ * By: Matthew Dennis (msd7734)
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +13,7 @@ using System.IO;
 namespace Csci351ftp
 {
     /// <summary>
-    /// Manage network resources.
+    /// Manage network resources by wrapping a single TcpClient.
     /// </summary>
     public class FTPConnection
     {
@@ -20,10 +24,22 @@ namespace Csci351ftp
         private TcpClient tcp;
         private byte[] buf;
         
+        /// <summary>
+        /// The IP address used for this connection.
+        /// </summary>
         public IPAddress IP { get; private set; }
 
+        /// <summary>
+        /// The DNS-provided host name for this connection.
+        /// </summary>
         public String HostName { get; private set; }
 
+        /// <summary>
+        /// Create a new FTPConnection and connect to the remote.
+        /// </summary>
+        /// <param name="hostName">The hostname of the remote.</param>
+        /// <param name="port">The port to connect to. Port 21 by default.</param>
+        /// <param name="bufferSize">The size of the buffer used for read operations. Default 512kb.</param>
         public FTPConnection(String hostName, int port = MAIN_PORT, int bufferSize = 0x40000)
         {
             try
@@ -62,6 +78,12 @@ namespace Csci351ftp
             }           
         }
 
+        /// <summary>
+        /// Create a new FTPConnection and connect to the remote.
+        /// </summary>
+        /// <param name="address">TheIP address of the remote.</param>
+        /// <param name="port">The port to connect to. Port 21 by default.</param>
+        /// <param name="bufferSize">The size of the buffer used for read operations. Default 512kb.</param>
         public FTPConnection(IPAddress address, int port = MAIN_PORT, int bufferSize = 0x40000)
         {
             IP = address;
@@ -141,6 +163,12 @@ namespace Csci351ftp
             return new ServerMessage(msg.ToString());
         }
 
+        /// <summary>
+        /// Read a directory listing provided by the remote. Used with passive mode.
+        /// This will not receive data if the remote has not established this FTPConnection
+        ///     as a data connection.
+        /// </summary>
+        /// <returns>The directory string provided by the server.</returns>
         public String ReadDirectory()
         {
             NetworkStream stream = tcp.GetStream();
@@ -157,6 +185,14 @@ namespace Csci351ftp
             return resultBuilder.ToString();
         }
 
+        /// <summary>
+        /// Read a file provided by the remote. Used with passive mode.
+        /// This will not receive data if the remote has not established this FTPConnection
+        ///     as a data connection.
+        /// </summary>
+        /// <param name="file">The stream to write the file data to.</param>
+        /// <param name="mode">The mode in which to interpret the file data.</param>
+        /// <returns></returns>
         public FileStream ReadFile(FileStream file, DataMode mode)
         {
             NetworkStream stream = tcp.GetStream();
@@ -210,6 +246,12 @@ namespace Csci351ftp
             }
         }
 
+        /// <summary>
+        /// Send a message to the server.
+        /// This message may not be interpreted if the server has not accepted this
+        ///     FTPConnection as a command connection.
+        /// </summary>
+        /// <param name="message"></param>
         public void SendMessage(String message)
         {
             NetworkStream stream = tcp.GetStream();
