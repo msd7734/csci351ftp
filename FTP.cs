@@ -24,8 +24,6 @@ namespace Csci351ftp
             if (args.Length != 1)
             {
                 Console.Error.WriteLine("Usage: [mono] Ftp server");
-                //Think of removing these for final build
-                Console.ReadKey(true);
                 return;
             }
 
@@ -37,7 +35,6 @@ namespace Csci351ftp
             catch (ArgumentException ae)
             {
                 Console.Error.WriteLine(ae.Message, ae.StackTrace);
-                Console.ReadKey(true);
                 return;
             }
             
@@ -68,7 +65,7 @@ namespace Csci351ftp
 
             }
 
-            Console.ReadKey(true);
+            
         }
 
         static IList<T> GetTail<T>(IList<T> arr)
