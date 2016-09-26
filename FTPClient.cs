@@ -115,15 +115,23 @@ namespace Csci351ftp
 
         public FTPClient(String remote)
         {
-            cmdCon = new FTPConnection(remote);
-            dataCon = null;
-            IsOpen = true;
-            IsDebug = false;
-            CliMode = ClientMode.Passive;
-            DatMode = DataMode.Binary;
+            try
+            {
+                cmdCon = new FTPConnection(remote);
+                dataCon = null;
+                IsOpen = true;
+                IsDebug = false;
+                CliMode = ClientMode.Passive;
+                DatMode = DataMode.Binary;
 
-            ServerMessage initialMsg = cmdCon.ReadMessage();
-            HandleReply(initialMsg);
+                ServerMessage initialMsg = cmdCon.ReadMessage();
+                HandleReply(initialMsg);
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e.Message);
+                IsOpen = false;
+            }
         }
 
         /// <summary>
@@ -207,7 +215,7 @@ namespace Csci351ftp
             String sendStr = String.Format("{0}{1}\r\n", cmd, argStr);
             DebugLine(String.Format("---> {0}", sendStr), IsDebug);
 
-            cmdCon.SendMessage(sendStr);            
+            cmdCon.SendMessage(sendStr);    
         }
 
         /// <summary>
@@ -248,12 +256,22 @@ namespace Csci351ftp
 
         private ServerMessage Quit()
         {
-            SendCmd("QUIT");
-            ServerMessage reply = cmdCon.ReadMessage();
-            IsOpen = false;
-            //Send QUIT
-            cmdCon.Close();
-            return reply;
+            try
+            {
+                SendCmd("QUIT");
+                ServerMessage reply = cmdCon.ReadMessage();
+                IsOpen = false;
+                //Send QUIT
+                cmdCon.Close();
+                return reply;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("The connection has been closed.");
+                IsOpen = false;
+                return new ServerMessage();
+            }
+            
         }
 
         private ServerMessage Ascii()

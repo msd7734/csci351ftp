@@ -13,6 +13,10 @@ namespace Csci351ftp
     /// </summary>
     public class FTPConnection
     {
+        // Ports
+        private const int MAIN_PORT= 21;
+        private const int FALLBACK_PORT = 2121;
+
         private TcpClient tcp;
         private byte[] buf;
         
@@ -20,7 +24,7 @@ namespace Csci351ftp
 
         public String HostName { get; private set; }
 
-        public FTPConnection(String hostName, int port = 21, int bufferSize = 0x40000)
+        public FTPConnection(String hostName, int port = MAIN_PORT, int bufferSize = 0x40000)
         {
             try
             {
@@ -44,7 +48,7 @@ namespace Csci351ftp
             {
                 try
                 {
-                    tcp.Connect(hostName, 2121);
+                    tcp.Connect(hostName, FALLBACK_PORT);
                 }
                 catch (Exception einner)
                 {
@@ -58,7 +62,7 @@ namespace Csci351ftp
             }           
         }
 
-        public FTPConnection(IPAddress address, int port = 21, int bufferSize = 0x40000)
+        public FTPConnection(IPAddress address, int port = MAIN_PORT, int bufferSize = 0x40000)
         {
             IP = address;
             try
@@ -82,7 +86,7 @@ namespace Csci351ftp
             {
                 try
                 {
-                    tcp.Connect(IP, 2121);
+                    tcp.Connect(IP, FALLBACK_PORT);
                 }
                 catch (Exception einner)
                 {

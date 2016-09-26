@@ -39,7 +39,7 @@ namespace Csci351ftp
             
             String input = String.Empty;
             
-            do
+            while (client.IsOpen)
             {
                 Console.Write(PROMPT);
                 input = Console.ReadLine();
@@ -62,7 +62,7 @@ namespace Csci351ftp
                     }   
                 }
 
-            } while (client.IsOpen);
+            }
 
             Console.ReadKey(true);
         }
