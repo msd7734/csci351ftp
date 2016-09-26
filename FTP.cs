@@ -48,7 +48,18 @@ namespace Csci351ftp
                 String[] cmdargs = GetTail<String>(tokens).ToArray<String>();
 
                 if (cmd.Length > 0) {
-                    client.Exec(cmd, cmdargs);
+                    try
+                    {
+                        client.Exec(cmd, cmdargs);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Error.WriteLine(e.Message);
+                        Console.Error.WriteLine(e.StackTrace);
+                        Console.WriteLine("!! Due to an unexpected exception, the FTP client will now close.");
+                        Console.WriteLine("!! Any file transfers may not have completed properly.");
+                        break;
+                    }   
                 }
 
             } while (client.IsOpen);
